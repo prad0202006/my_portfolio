@@ -1,5 +1,6 @@
 import React, { Suspense, lazy } from 'react';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { PortfolioDataProvider } from './contexts/PortfolioDataContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import LoadingScreen from './components/LoadingScreen';
 import './App.css';
@@ -12,6 +13,7 @@ const Skills = lazy(() => import('./components/Skills'));
 const Projects = lazy(() => import('./components/Projects'));
 const Experience = lazy(() => import('./components/Experience'));
 const Resume = lazy(() => import('./components/Resume'));
+const ResumeUploader = lazy(() => import('./components/ResumeUploader'));
 const Contact = lazy(() => import('./components/Contact'));
 const Footer = lazy(() => import('./components/Footer'));
 
@@ -19,21 +21,24 @@ function App() {
   return (
     <ErrorBoundary>
       <ThemeProvider>
-        <div className="min-h-screen">
-          <Suspense fallback={<LoadingScreen />}>
-            <Navbar />
-            <main>
-              <Hero />
-              <About />
-              <Skills />
-              <Projects />
-              <Experience />
-              <Resume />
-              <Contact />
-            </main>
-            <Footer />
-          </Suspense>
-        </div>
+        <PortfolioDataProvider>
+          <div className="min-h-screen">
+            <Suspense fallback={<LoadingScreen />}>
+              <Navbar />
+              <main>
+                <Hero />
+                <About />
+                <Skills />
+                <Projects />
+                <Experience />
+                <Resume />
+                <ResumeUploader />
+                <Contact />
+              </main>
+              <Footer />
+            </Suspense>
+          </div>
+        </PortfolioDataProvider>
       </ThemeProvider>
     </ErrorBoundary>
   );

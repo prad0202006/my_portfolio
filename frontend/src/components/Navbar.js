@@ -13,6 +13,7 @@ const Navbar = () => {
     { label: 'Projects', href: '#projects' },
     { label: 'Experience', href: '#experience' },
     { label: 'Resume', href: '#resume' },
+    { label: 'Upload Resume', href: '#resume-uploader' },
     { label: 'Contact', href: '#contact' },
   ];
 

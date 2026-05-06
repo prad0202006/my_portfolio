@@ -76,11 +76,13 @@ initDB();
 const authRoutes = require('./routes/auth');
 const profileRoutes = require('./routes/profile');
 const projectRoutes = require('./routes/projects');
+const resumeRoutes = require('./routes/resume');
 
 // Use Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/projects', projectRoutes);
+app.use('/api/resume', resumeRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
