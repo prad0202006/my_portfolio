@@ -36,9 +36,9 @@ const Resume = () => {
     skills: {
       programming: 'Python, Java basics, C, C++, JavaScript, Express.js, CSS',
       database: 'SQL, PL/SQL',
-      web: 'HTML, CSS, React, Responsive Design',
-      tools: 'Tally.ERP 9, Git, VS Code, basic computer operations',
-      professional: 'Communication, Teamwork, Time Management, Problem Solving, Quick Learning',
+      web: 'HTML basics',
+      tools: 'Tally.ERP 9, basic computer operations, digital literacy',
+      professional: 'Communication, teamwork, time management, problem solving, quick learning',
       languages: 'English, Hindi, Kannada, Tamil'
     },
     experience: [
@@ -58,15 +58,15 @@ const Resume = () => {
     projects: [
       {
         title: 'Premium Portfolio Website',
-        description: 'Modern, high-end portfolio website built with React, Tailwind CSS, and Framer Motion',
+        description: 'Modern, high-end portfolio website showcasing skills and projects as a Full-Stack Developer',
         tech: 'React 18, Tailwind CSS, Framer Motion, SEO, PWA',
         link: 'https://prad0202006.github.io/my_portfolio',
         github: 'https://github.com/prad0202006/my_portfolio'
       },
       {
         title: 'Library Management System',
-        description: 'Project focused on organizing library records and simplifying book-management workflows',
-        tech: 'Python, Database, CRUD Operations',
+        description: 'Developed a project focused on organizing library records and simplifying book-management workflows. Applied programming and database fundamentals to structure information for books, users, and transactions.',
+        tech: 'Python, Database, CRUD Operations, SQL',
         github: 'https://github.com/prad0202006/library-management-system'
       }
     ],
@@ -266,6 +266,29 @@ const Resume = () => {
                 <p className="text-gray-600 dark:text-gray-400 text-sm">{edu.duration} - {edu.status}</p>
               </motion.div>
             ))}
+          </motion.div>
+        </motion.div>
+
+        {/* Additional Information */}
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          className="p-6 rounded-xl bg-white dark:bg-dark-800/50 border border-gray-200 dark:border-gray-700"
+        >
+          <motion.h2 variants={itemVariants} className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">
+            Additional Information
+          </motion.h2>
+          <motion.div variants={containerVariants} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <motion.div variants={itemVariants}>
+              <p className="text-gray-600 dark:text-gray-400 text-sm uppercase tracking-wider font-semibold">Date of Birth</p>
+              <p className="text-gray-900 dark:text-white text-lg">02 May 2006</p>
+            </motion.div>
+            <motion.div variants={itemVariants}>
+              <p className="text-gray-600 dark:text-gray-400 text-sm uppercase tracking-wider font-semibold">Preferred Location</p>
+              <p className="text-gray-900 dark:text-white text-lg">Bengaluru, India</p>
+            </motion.div>
           </motion.div>
         </motion.div>
       </div>
