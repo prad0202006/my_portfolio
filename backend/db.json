@@ -1,0 +1,43 @@
+{
+  "admins": [
+    {
+      "id": "1778071052455",
+      "email": "admin@example.com",
+      "password": "$2a$10$i2SI6sfBFeIOLqRs.Exmn.rN9XwVXrOgxN9F58RqGc54DPRrQ/P/a",
+      "createdAt": "2026-05-06T12:37:32.455Z"
+    }
+  ],
+  "profiles": [
+    {
+      "name": "Pradeep G",
+      "title": "Aspiring Software Developer",
+      "bio": "Career Objective: Motivated and eager to gain hands-on work experience. Looking to develop practical skills and contribute meaningfully to a professional organization. Education: BCA in BCA (Ongoing), Govt. First Grade College (Jan '23 — Present). Experience: Flex Associate at Zepto (Jan '25 — Jun '25) in Bangalore, India, handling product flow and ensuring customer satisfaction. Skills: Quick Learner, Time Management, Teamwork, Communication. Technical: Java, Python, SQL, PL/SQL, C, C++, HTML, Tally.ERP 9. Languages: English, Hindi, Kannada, Tamil.",
+      "email": "gp893727@gmail.com",
+      "phone": "+917019037528",
+      "location": "HSR Layout, Bengaluru, Karnataka, 560102, India",
+      "profileImage": "",
+      "backgroundImage": "",
+      "socialLinks": {
+        "linkedin": "https://www.linkedin.com/in/pradeepg",
+        "twitter": "",
+        "github": ""
+      },
+      "updatedAt": "2026-05-06T12:37:32.455Z"
+    }
+  ],
+  "projects": [
+    {
+      "id": "library-management-system",
+      "title": "Library Management System",
+      "description": "Developed a Library Management System to manage book records, issue/return workflows, and user access. Built as a practical academic project demonstrating database use and interface design.",
+      "category": "Other",
+      "image": "",
+      "technologies": ["Java", "SQL", "HTML"],
+      "link": "",
+      "githubLink": "",
+      "featured": false,
+      "createdAt": "2026-10-25T00:00:00.000Z",
+      "updatedAt": "2026-10-25T00:00:00.000Z"
+    }
+  ]
+}

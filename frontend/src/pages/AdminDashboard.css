@@ -1,0 +1,253 @@
+.admin-dashboard {
+  padding: 40px 20px;
+  min-height: 100vh;
+}
+
+.admin-dashboard h1 {
+  font-size: 36px;
+  margin-bottom: 30px;
+  color: #f1f5f9;
+}
+
+.message {
+  padding: 15px;
+  border-radius: 5px;
+  margin-bottom: 20px;
+  font-weight: 500;
+}
+
+.message.error {
+  background-color: #7f1d1d;
+  color: #fecaca;
+}
+
+.message.success {
+  background-color: #1f2937;
+  color: #86efac;
+}
+
+.tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 30px;
+  border-bottom: 2px solid #334155;
+}
+
+.tab-btn {
+  padding: 12px 24px;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  transition: all 0.3s ease;
+}
+
+.tab-btn:hover {
+  color: #3b82f6;
+}
+
+.tab-btn.active {
+  color: #3b82f6;
+  border-bottom-color: #3b82f6;
+}
+
+.tab-content {
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid #334155;
+  border-radius: 10px;
+  padding: 30px;
+}
+
+.tab-content h2 {
+  font-size: 24px;
+  margin-bottom: 20px;
+  color: #f1f5f9;
+}
+
+.tab-content h3 {
+  font-size: 18px;
+  margin-top: 25px;
+  margin-bottom: 15px;
+  color: #cbd5e1;
+}
+
+.form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  margin-bottom: 8px;
+  color: #cbd5e1;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+  padding: 12px;
+  border: 1px solid #475569;
+  border-radius: 5px;
+  background-color: #1e293b;
+  color: #e2e8f0;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.button-group {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 10px;
+}
+
+.save-btn,
+.edit-btn {
+  background-color: #3b82f6;
+  color: white;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  flex: 1;
+}
+
+.save-btn:hover:not(:disabled),
+.edit-btn:hover {
+  background-color: #2563eb;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(59, 130, 246, 0.3);
+}
+
+.save-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.cancel-btn {
+  background-color: #475569;
+  color: white;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  flex: 1;
+}
+
+.cancel-btn:hover {
+  background-color: #64748b;
+}
+
+.delete-btn {
+  background-color: #ef4444;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 5px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.delete-btn:hover {
+  background-color: #dc2626;
+}
+
+.projects-list {
+  margin-top: 20px;
+}
+
+.project-item {
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.project-info {
+  flex: 1;
+  min-width: 200px;
+}
+
+.project-item h3 {
+  margin: 0 0 10px 0;
+  color: #f1f5f9;
+  font-size: 18px;
+}
+
+.project-item p {
+  margin: 5px 0;
+  color: #cbd5e1;
+  font-size: 14px;
+}
+
+.category-badge {
+  display: inline-block;
+  background-color: rgba(59, 130, 246, 0.2);
+  color: #3b82f6;
+  padding: 4px 12px;
+  border-radius: 15px;
+  font-size: 12px;
+  margin-top: 8px;
+}
+
+.project-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  .admin-dashboard h1 {
+    font-size: 28px;
+  }
+
+  .form {
+    grid-template-columns: 1fr;
+  }
+
+  .project-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .button-group {
+    flex-direction: column;
+  }
+}

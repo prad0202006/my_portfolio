@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Borrow a Book</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #FFF8DC;
+            font-family: "Courier New", monospace;
+        }
+        header {
+            background-color: #003366;
+            color: #fff;
+            padding: 20px;
+            text-align: center;
+            font-size: 26px;
+            border-bottom: 3px solid #FFD700;
+        }
+        main {
+            width: 50%;
+            margin: 50px auto;
+            background: #FDF5E6;
+            border: 2px solid #003366;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+        }
+        label {
+            font-weight: bold;
+            display: block;
+            margin: 15px 0 5px;
+            color: #003366;
+        }
+        select {
+            width: 80%;
+            padding: 8px;
+            border: 2px solid #003366;
+            border-radius: 4px;
+            background: #fff;
+        }
+        button {
+            margin-top: 25px;
+            padding: 10px 25px;
+            background-color: #003366;
+            color: #fff;
+            border: 2px solid #FFD700;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        button:hover {
+            background-color: #FFD700;
+            color: #003366;
+        }
+        a {
+            display: inline-block;
+            margin-top: 25px;
+            text-decoration: none;
+            background: #F0E68C;
+            border: 2px solid #003366;
+            padding: 10px 20px;
+            color: #000;
+            border-radius: 4px;
+        }
+        a:hover {
+            background: #FFD700;
+            color: #003366;
+        }
+    </style>
+</head>
+<body>
+    <header>📖 Borrow a Book</header>
+    <main>
+        <form method="POST">
+            {% csrf_token %}
+            <label for="member">Select Member:</label>
+            <select name="member" id="member" required>
+                {% for member in members %}
+                <option value="{{ member.id }}">{{ member.name }}</option>
+                {% endfor %}
+            </select>
+
+            <label for="book">Select Book:</label>
+            <select name="book" id="book" required>
+                {% for book in books %}
+                <option value="{{ book.id }}">{{ book.title }}</option>
+                {% endfor %}
+            </select>
+
+            <button type="submit">Borrow</button>
+        </form>
+        <a href="{% url 'home' %}">⬅ Back to Home</a>
+    </main>
+</body>
+</html>

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Book List</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #FFF8DC;
+            font-family: "Courier New", monospace;
+            color: #000;
+        }
+        header {
+            background-color: #003366;
+            color: #fff;
+            padding: 20px;
+            text-align: center;
+            font-size: 26px;
+            border-bottom: 3px solid #FFD700;
+            position: relative;
+        }
+        .logout {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #FFD700;
+            color: #003366;
+            padding: 8px 12px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        main {
+            width: 80%;
+            margin: 40px auto;
+            background: #FDF5E6;
+            border: 2px solid #003366;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+            padding: 30px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #fff;
+        }
+        th, td {
+            border: 1px solid #003366;
+            padding: 10px;
+            text-align: center;
+        }
+        th {
+            background: #003366;
+            color: #fff;
+        }
+        tr:nth-child(even) {background: #F9F9F9;}
+        a {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            text-decoration: none;
+            background: #F0E68C;
+            border: 2px solid #003366;
+            color: #000;
+            font-weight: bold;
+            border-radius: 4px;
+        }
+        a:hover {
+            background: #FFD700;
+            color: #003366;
+        }
+        .admin-btn {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            text-decoration: none;
+        }
+        .delete-btn {
+            background-color: #FF6347;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            text-decoration: none;
+        }
+        .admin-btn:hover, .delete-btn:hover {
+            opacity: 0.85;
+        }
+    </style>
+</head>
+<body>
+    <header>📚 Book List
+        <a href="{% url 'logout' %}" class="logout">Logout</a>
+    </header>
+    <main>
+        {% if user.is_authenticated %}
+        <p style="text-align:center; color:green; font-weight:bold;">
+            👋 Welcome, {{ user.username }}!
+        </p>
+        {% endif %}
+
+        {% if user.is_staff %}
+        <div style="text-align:right; margin-bottom:15px;">
+            <a href="{% url 'add_book' %}" class="admin-btn">➕ Add New Book</a>
+        </div>
+        {% endif %}
+
+        <table>
+            <tr>
+                <th>Title</th>
+                <th>Author</th>
+                <th>ISBN</th>
+                <th>Available</th>
+                {% if user.is_staff %}<th>Action</th>{% endif %}
+            </tr>
+            {% for book in books %}
+            <tr>
+                <td>{{ book.title }}</td>
+                <td>{{ book.author }}</td>
+                <td>{{ book.isbn }}</td>
+                <td>{% if book.available %}✅ Yes{% else %}❌ No{% endif %}</td>
+                {% if user.is_staff %}
+                <td>
+                    <a href="{% url 'delete_book' book.id %}" class="delete-btn">🗑 Delete</a>
+                </td>
+                {% endif %}
+            </tr>
+            {% empty %}
+            <tr><td colspan="5">No books found.</td></tr>
+            {% endfor %}
+        </table>
+
+        <a href="{% url 'home' %}">⬅ Back to Home</a>
+    </main>
+</body>
+</html>

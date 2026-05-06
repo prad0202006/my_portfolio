@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Borrowed Books</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+            color: #333;
+            text-align: center;
+        }
+        table {
+            margin: 30px auto;
+            border-collapse: collapse;
+            width: 80%;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+            background: white;
+        }
+        th, td {
+            padding: 12px 20px;
+            border: 1px solid #ccc;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+        tr:nth-child(even) {background-color: #f9f9f9;}
+        a {
+            text-decoration: none;
+            color: #007bff;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Members Who Borrowed Books</h1>
+    <table>
+        <tr>
+            <th>Member Name</th>
+            <th>Email</th>
+            <th>Book Title</th>
+            <th>Borrow Date</th>
+            <th>Return Date</th>
+        </tr>
+        {% for item in borrowed %}
+        <tr>
+            <td>{{ item.member.name }}</td>
+            <td>{{ item.member.email }}</td>
+            <td>{{ item.book.title }}</td>
+            <td>{{ item.borrow_date }}</td>
+            <td>{{ item.return_date|default:"Not Returned" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5">No borrowed books found.</td></tr>
+        {% endfor %}
+    </table>
+
+    <a href="{% url 'home' %}">⬅ Back to Home</a>
+</body>
+</html>

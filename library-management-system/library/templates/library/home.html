@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <div style="position:absolute; top:20px; right:20px;">
+     <a href="{% url 'logout' %}" style="color:white; text-decoration:none;">Logout</a>
+    </div>
+
+    <meta charset="UTF-8">
+    <title>Library Management System</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #FFF8DC; /* light yellow like Tally */
+            font-family: "Courier New", monospace;
+            color: #000;
+        }
+        header {
+            background-color: #003366; /* dark blue like Tally header */
+            color: #fff;
+            padding: 20px 0;
+            text-align: center;
+            font-size: 28px;
+            font-weight: bold;
+            border-bottom: 3px solid #FFD700;
+        }
+        main {
+            width: 60%;
+            margin: 60px auto;
+            background-color: #FDF5E6;
+            border: 2px solid #003366;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+            padding: 30px;
+        }
+        h2 {
+            text-align: center;
+            color: #003366;
+            margin-bottom: 30px;
+            border-bottom: 2px dashed #FFD700;
+            padding-bottom: 10px;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0 auto;
+            width: 80%;
+        }
+        li {
+            margin: 15px 0;
+        }
+        a {
+            display: block;
+            text-decoration: none;
+            background-color: #F0E68C;
+            color: #000;
+            padding: 12px;
+            border: 2px solid #003366;
+            border-radius: 4px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        a:hover {
+            background-color: #FFD700;
+            color: #003366;
+            transform: scale(1.03);
+        }
+        footer {
+            text-align: center;
+            padding: 15px;
+            color: #003366;
+            font-size: 14px;
+            margin-top: 40px;
+            border-top: 2px solid #003366;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        Library Management System
+    </header>
+
+    <main>
+        <h2>Menu</h2>
+        {% if user.is_authenticated %}
+    <p style="text-align:center; color:green; font-weight:bold; font-size:18px;">
+        👋 Welcome, {{ user.username }}! You are currently logged in.
+    </p>
+{% endif %}
+
+        <ul>
+            <li><a href="{% url 'book_list' %}">📚 View Books</a></li>
+            <li><a href="{% url 'member_list' %}">👥 View Members</a></li>
+            <li><a href="{% url 'borrow_book' %}">📖 Borrow a Book</a></li>
+            <li><a href="{% url 'borrowed_list' %}">📋 View Borrowed Books</a></li>
+        </ul>
+    </main>
+
+    <footer>
+        © {{ year|default:"2025" }} Library Management | Styled like Tally 9
+    </footer>
+</body>
+</html>
