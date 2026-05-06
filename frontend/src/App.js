@@ -1,46 +1,39 @@
-import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import axios from 'axios';
-import Navigation from './components/Navigation';
-import ProfilePage from './pages/ProfilePage';
-import AdminDashboard from './pages/AdminDashboard';
-import AdminLogin from './pages/AdminLogin';
+import React, { Suspense, lazy } from 'react';
+import { ThemeProvider } from './contexts/ThemeContext';
+import ErrorBoundary from './components/ErrorBoundary';
+import LoadingScreen from './components/LoadingScreen';
 import './App.css';
 
+// Lazy load components for better performance
+const Navbar = lazy(() => import('./components/Navbar'));
+const Hero = lazy(() => import('./components/Hero'));
+const About = lazy(() => import('./components/About'));
+const Skills = lazy(() => import('./components/Skills'));
+const Projects = lazy(() => import('./components/Projects'));
+const Experience = lazy(() => import('./components/Experience'));
+const Contact = lazy(() => import('./components/Contact'));
+const Footer = lazy(() => import('./components/Footer'));
+
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      setIsAuthenticated(true);
-    }
-    setLoading(false);
-  }, []);
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    setIsAuthenticated(false);
-  };
-
-  if (loading) {
-    return <div className="loading">Loading...</div>;
-  }
-
   return (
-    <Router>
-      <Navigation isAuthenticated={isAuthenticated} onLogout={handleLogout} />
-      <Routes>
-        <Route path="/" element={<ProfilePage />} />
-        <Route path="/admin/login" element={<AdminLogin setIsAuthenticated={setIsAuthenticated} />} />
-        <Route
-          path="/admin"
-          element={isAuthenticated ? <AdminDashboard /> : <Navigate to="/admin/login" />}
-        />
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
-    </Router>
+    <ErrorBoundary>
+      <ThemeProvider>
+        <div className="min-h-screen">
+          <Suspense fallback={<LoadingScreen />}>
+            <Navbar />
+            <main>
+              <Hero />
+              <About />
+              <Skills />
+              <Projects />
+              <Experience />
+              <Contact />
+            </main>
+            <Footer />
+          </Suspense>
+        </div>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 }
 
