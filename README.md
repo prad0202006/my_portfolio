@@ -1,52 +1,352 @@
-# 🚀 Pradeep G - Premium Portfolio
+# 🚀 Production-Grade AI Portfolio with Resume Upload
 
-A modern, high-end portfolio website showcasing my skills as a Full-Stack Developer and AI/ML Enthusiast. Built with React, Tailwind CSS, and Framer Motion for a premium user experience.
-
-![Portfolio Preview](https://via.placeholder.com/800x400/06b6d4/ffffff?text=Portfolio+Preview)
+A modern, secure, and scalable portfolio website featuring AI-powered resume parsing with real-time progress updates. Built with enterprise-grade security and premium user experience.
 
 ## ✨ Features
 
-- **🎨 Modern Design**: Glassmorphism effects with dark/light mode toggle
-- **📱 Fully Responsive**: Perfect on all devices (mobile, tablet, desktop)
-- **⚡ Smooth Animations**: Framer Motion powered transitions and effects
-- **🔍 SEO Optimized**: Meta tags, Open Graph, and Twitter cards
-- **♿ Accessible**: ARIA labels and keyboard navigation support
-- **🚀 Fast Performance**: Optimized bundle with code splitting
-- **🎯 Professional**: Designed for top tech companies and recruiters
+### 🔒 **Enterprise Security**
+- **File Upload Security**: Multer with comprehensive validation
+- **Rate Limiting**: Express-rate-limit protection
+- **Helmet Security**: Security headers and XSS protection
+- **CORS Protection**: Configured cross-origin policies
+- **Input Sanitization**: Joi validation and data sanitization
+- **Auto File Cleanup**: Temporary files removed after processing
 
-## � Deployment
+### ⚡ **Real-Time Processing**
+- **WebSocket Integration**: Socket.IO for live progress updates
+- **Animated Progress**: Smooth progress bars with status messages
+- **Multi-Stage Parsing**: Upload → Parse → Extract → Update
+- **Error Recovery**: Graceful error handling with user feedback
 
-The portfolio is deployed and live at: **[https://prad0202006.github.io/my_portfolio](https://prad0202006.github.io/my_portfolio)**
+### 🤖 **AI-Powered Parsing**
+- **PDF & DOCX Support**: Advanced text extraction
+- **Structured Data**: JSON output with 10+ fields
+- **Smart Extraction**: Name, email, skills, experience, projects
+- **Fallback Handling**: Robust error recovery
+- **Quality Validation**: Data integrity checks
 
-### Deployment Options
+### 🎨 **Premium UX**
+- **Drag & Drop**: Intuitive file upload interface
+- **Dark/Light Mode**: Theme switching support
+- **Framer Motion**: Smooth animations and transitions
+- **Responsive Design**: Mobile-first approach
+- **Loading States**: Skeleton screens and progress indicators
 
-#### GitHub Pages (Current)
+## 🏗️ **Architecture**
+
+```
+backend/
+├── src/
+│   ├── config/           # Environment & app configuration
+│   ├── controllers/      # Request handlers
+│   ├── services/         # Business logic (resume parsing)
+│   ├── middleware/       # Security, validation, error handling
+│   ├── routes/          # API endpoints
+│   ├── utils/           # Helpers (logger, validation)
+│   ├── validators/      # Input validation schemas
+│   └── server.js        # Main application entry
+├── uploads/             # Temporary file storage (auto-cleaned)
+├── logs/               # Winston logging files
+└── package.json
+
+frontend/
+├── src/
+│   ├── components/      # React components
+│   ├── contexts/        # React Context for state
+│   ├── hooks/          # Custom React hooks
+│   └── utils/          # Frontend utilities
+└── package.json
+```
+
+## 🚀 **Quick Start**
+
+### Prerequisites
+- Node.js 18+
+- npm or yarn
+- Git
+
+### 1. Clone & Install
+
+```bash
+# Clone the repository
+git clone https://github.com/prad0202006/my_portfolio.git
+cd my_portfolio
+
+# Install backend dependencies
+cd backend
+npm install
+
+# Install frontend dependencies
+cd ../frontend
+npm install
+```
+
+### 2. Environment Setup
+
+#### Backend (.env)
+```bash
+# Copy environment template
+cp .env.example .env
+
+# Edit .env with your values
+PORT=5000
+NODE_ENV=development
+JWT_SECRET=your_secure_jwt_secret_here_min_32_chars
+FRONTEND_URL=http://localhost:3000
+MONGODB_URI=mongodb://localhost:27017/nanotech-portfolio
+```
+
+#### Frontend (.env)
+```bash
+# Copy environment template
+cp .env.example .env
+
+# Edit .env with your values
+REACT_APP_API_URL=http://localhost:5000
+REACT_APP_ENV=development
+```
+
+### 3. Start Development Servers
+
+```bash
+# Terminal 1: Start Backend
+cd backend
+npm run dev
+
+# Terminal 2: Start Frontend
+cd frontend
+npm start
+```
+
+### 4. Access Your Portfolio
+
+- **Frontend**: http://localhost:3000/my_portfolio
+- **Backend API**: http://localhost:5000
+- **Health Check**: http://localhost:5000/api/health
+
+## 📡 **API Documentation**
+
+### Resume Upload
+```http
+POST /api/resume/upload
+Content-Type: multipart/form-data
+
+Form Data:
+- resume: File (PDF/DOCX, max 5MB)
+- x-client-id: String (optional, for WebSocket tracking)
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Resume parsed successfully",
+  "data": {
+    "name": "John Doe",
+    "email": "john@example.com",
+    "phone": "+1-555-0123",
+    "skills": ["JavaScript", "React", "Node.js"],
+    "experience": [...],
+    "education": [...],
+    "projects": [...]
+  },
+  "fileName": "resume.pdf",
+  "parsedAt": "2024-01-01T00:00:00.000Z"
+}
+```
+
+### Real-Time Progress (WebSocket)
+```javascript
+// Connect to Socket.IO
+const socket = io('http://localhost:5000');
+
+// Listen for progress updates
+socket.on('resume-parsing-progress', (data) => {
+  console.log(`${data.progress}%: ${data.message}`);
+  // data: { progress: 35, message: "Extracting skills...", timestamp: "..." }
+});
+```
+
+## 🔧 **Configuration**
+
+### Security Settings
+```javascript
+// backend/src/config/config.js
+const config = {
+  // File upload limits
+  MAX_FILE_SIZE: 5 * 1024 * 1024, // 5MB
+
+  // Rate limiting
+  RATE_LIMIT_MAX: 100, // requests per 15 minutes
+  UPLOAD_RATE_LIMIT_MAX: 10, // uploads per hour
+
+  // CORS origins
+  CORS_ORIGINS: [
+    'http://localhost:3000',
+    'https://yourdomain.com'
+  ]
+};
+```
+
+### Parsing Configuration
+```javascript
+// backend/src/services/resumeParser.js
+const parsingProgress = {
+  EXTRACTING_TEXT: 10,
+  PARSING_NAME: 20,
+  PARSING_CONTACT: 30,
+  PARSING_SKILLS: 40,
+  PARSING_EXPERIENCE: 60,
+  PARSING_EDUCATION: 75,
+  PARSING_PROJECTS: 85,
+  FINALIZING: 95,
+  COMPLETE: 100
+};
+```
+
+## 🧪 **Testing**
+
+### Backend Tests
+```bash
+cd backend
+npm test
+```
+
+### Manual Testing
+1. **File Upload**: Try uploading PDF/DOCX files
+2. **Progress Updates**: Monitor WebSocket messages
+3. **Error Handling**: Test with invalid files
+4. **Security**: Attempt path traversal, large files, etc.
+
+## 🚀 **Production Deployment**
+
+### 1. Build Frontend
 ```bash
 cd frontend
-npm run deploy:gh-pages
+npm run build
 ```
 
-#### Vercel (Recommended)
+### 2. Environment Variables
 ```bash
-cd frontend
-npm run deploy:vercel
+# Production .env
+NODE_ENV=production
+JWT_SECRET=your_production_secret_min_64_chars
+FRONTEND_URL=https://yourdomain.com
+MONGODB_URI=your_production_mongo_uri
 ```
 
-#### Netlify
+### 3. Start Production Server
 ```bash
-cd frontend
-npm run deploy:netlify
+cd backend
+npm start
 ```
 
-### Environment Variables
+### 4. Nginx Configuration (Optional)
+```nginx
+server {
+    listen 80;
+    server_name yourdomain.com;
 
-Copy `.env.example` to `.env` and update with your values:
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
 
+    location /api {
+        proxy_pass http://localhost:5000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+```
+
+## 🔒 **Security Features**
+
+- ✅ **File Type Validation**: MIME type and extension checking
+- ✅ **Size Limits**: 5MB maximum file size
+- ✅ **Path Traversal Protection**: Filename sanitization
+- ✅ **Rate Limiting**: Prevents abuse and DoS attacks
+- ✅ **Security Headers**: Helmet.js protection
+- ✅ **Input Validation**: Joi schema validation
+- ✅ **Auto Cleanup**: Temporary files removed after processing
+- ✅ **Error Sanitization**: No sensitive data in error responses
+
+## 📊 **Performance Optimizations**
+
+- ⚡ **WebSocket Compression**: Efficient real-time updates
+- 🚀 **Lazy Loading**: Components loaded on demand
+- 📦 **File Streaming**: Large files processed in chunks
+- 🗂️ **Background Processing**: Non-blocking file operations
+- 💾 **Memory Management**: Automatic cleanup and garbage collection
+
+## 🐛 **Troubleshooting**
+
+### Common Issues
+
+**1. WebSocket Connection Failed**
 ```bash
-cp frontend/.env.example frontend/.env
+# Check CORS settings in backend/src/server.js
+# Ensure FRONTEND_URL matches your frontend URL
 ```
 
-## 🏃‍♂️ Quick Start
+**2. File Upload Errors**
+```bash
+# Check file permissions on uploads/ directory
+# Verify MAX_FILE_SIZE in config
+# Check multer configuration
+```
+
+**3. Parsing Errors**
+```bash
+# Check PDF/DOCX file corruption
+# Verify text extraction libraries
+# Check parsing regex patterns
+```
+
+**4. Port Conflicts**
+```bash
+# Change PORT in .env file
+# Kill processes using the port: netstat -ano | findstr :5000
+```
+
+### Debug Mode
+```bash
+# Enable detailed logging
+LOG_LEVEL=debug npm run dev
+
+# Check logs
+tail -f backend/logs/all.log
+```
+
+## 🤝 **Contributing**
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Commit changes: `git commit -m 'Add amazing feature'`
+4. Push to branch: `git push origin feature/amazing-feature`
+5. Open a Pull Request
+
+## 📄 **License**
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 **Acknowledgments**
+
+- **Socket.IO**: Real-time communication
+- **Multer**: File upload handling
+- **pdf-parse**: PDF text extraction
+- **Mammoth**: DOCX text extraction
+- **Framer Motion**: Smooth animations
+- **Tailwind CSS**: Utility-first styling
+
+## 📞 **Support**
+
+For support, email gp893727@gmail.com or create an issue in the repository.
+
+---
+
+**Built with ❤️ by Pradeep G**
 
 ### Frontend
 - **React 18** - Modern React with hooks

@@ -1,20 +1,68 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiUpload, FiX, FiCheck, FiAlertCircle, FiDownload } from 'react-icons/fi';
+import { FiUpload, FiX, FiCheck, FiAlertCircle, FiDownload, FiZap } from 'react-icons/fi';
 import { usePortfolioData } from '../contexts/PortfolioDataContext';
 import axios from 'axios';
+import io from 'socket.io-client';
 
 const ResumeUploader = () => {
   const fileInputRef = useRef(null);
+  const socketRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [parsingProgress, setParsingProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
+  const [isParsing, setIsParsing] = useState(false);
   const [uploadError, setUploadError] = useState(null);
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [parsedData, setParsedData] = useState(null);
+  const [progressMessage, setProgressMessage] = useState('');
+  const [clientId, setClientId] = useState(null);
   const { updatePortfolioData, setError } = usePortfolioData();
 
   const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
+  // Initialize Socket.IO connection
+  useEffect(() => {
+    const socket = io(API_BASE_URL, {
+      transports: ['websocket', 'polling'],
+      upgrade: true,
+    });
+
+    socketRef.current = socket;
+
+    // Generate unique client ID for this session
+    const sessionId = `client_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    setClientId(sessionId);
+
+    socket.on('connect', () => {
+      console.log('Connected to server for real-time updates');
+      socket.emit('start-resume-upload', { clientId: sessionId });
+    });
+
+    socket.on('resume-parsing-progress', (data) => {
+      setParsingProgress(data.progress);
+      setProgressMessage(data.message);
+
+      if (data.error) {
+        setUploadError(data.message);
+        setIsParsing(false);
+        setIsUploading(false);
+      }
+
+      if (data.progress >= 100) {
+        setIsParsing(false);
+      }
+    });
+
+    socket.on('disconnect', () => {
+      console.log('Disconnected from server');
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [API_BASE_URL]);
 
   const handleDragOver = (e) => {
     e.preventDefault();
@@ -47,16 +95,16 @@ const ResumeUploader = () => {
     const validExtensions = ['.pdf', '.docx'];
 
     const fileExtension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
-    
+
     if (!validTypes.includes(file.type) && !validExtensions.includes(fileExtension)) {
       setUploadError('Please upload a valid PDF or DOCX file');
       setUploadSuccess(false);
       return;
     }
 
-    // Validate file size (10MB max)
-    if (file.size > 10 * 1024 * 1024) {
-      setUploadError('File size must be less than 10MB');
+    // Validate file size (5MB max - updated to match backend)
+    if (file.size > 5 * 1024 * 1024) {
+      setUploadError('File size must be less than 5MB');
       setUploadSuccess(false);
       return;
     }
@@ -70,9 +118,12 @@ const ResumeUploader = () => {
     formData.append('resume', file);
 
     setIsUploading(true);
+    setIsParsing(false);
     setUploadError(null);
     setUploadSuccess(false);
     setUploadProgress(0);
+    setParsingProgress(0);
+    setProgressMessage('');
 
     try {
       const response = await axios.post(
@@ -80,11 +131,18 @@ const ResumeUploader = () => {
         formData,
         {
           headers: {
-            'Content-Type': 'multipart/form-data'
+            'Content-Type': 'multipart/form-data',
+            'x-client-id': clientId
           },
           onUploadProgress: (progressEvent) => {
             const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
             setUploadProgress(progress);
+
+            if (progress >= 100) {
+              setIsUploading(false);
+              setIsParsing(true);
+              setProgressMessage('Upload completed. Starting parsing...');
+            }
           }
         }
       );
@@ -93,23 +151,25 @@ const ResumeUploader = () => {
         setParsedData(response.data.data);
         setUploadSuccess(true);
         setUploadError(null);
-        
-        // Show success for 2 seconds then reset
+        setProgressMessage('Resume parsing completed successfully!');
+
+        // Show success for 3 seconds then allow apply
         setTimeout(() => {
-          setUploadProgress(0);
-        }, 2000);
+          setParsingProgress(100);
+        }, 1000);
       } else {
-        setUploadError(response.data.message || 'Failed to parse resume');
+        setUploadError(response.data.error || 'Failed to parse resume');
+        setIsParsing(false);
       }
     } catch (error) {
       console.error('Upload error:', error);
       setUploadError(
-        error.response?.data?.message || 
-        error.message || 
+        error.response?.data?.error ||
+        error.message ||
         'Failed to upload resume'
       );
       setUploadSuccess(false);
-    } finally {
+      setIsParsing(false);
       setIsUploading(false);
     }
   };
@@ -118,13 +178,15 @@ const ResumeUploader = () => {
     if (parsedData) {
       updatePortfolioData(parsedData);
       setError(null);
-      
+
       // Show confirmation
       setTimeout(() => {
         setUploadSuccess(false);
         setParsedData(null);
         setUploadProgress(0);
-      }, 1500);
+        setParsingProgress(0);
+        setProgressMessage('');
+      }, 2000);
     }
   };
 
@@ -133,9 +195,26 @@ const ResumeUploader = () => {
     setUploadSuccess(false);
     setUploadError(null);
     setUploadProgress(0);
+    setParsingProgress(0);
+    setProgressMessage('');
+    setIsUploading(false);
+    setIsParsing(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+  };
+
+  const getProgressColor = () => {
+    if (uploadError) return 'from-red-500 to-red-600';
+    if (uploadSuccess) return 'from-green-500 to-green-600';
+    return 'from-blue-500 to-blue-600';
+  };
+
+  const getProgressIcon = () => {
+    if (uploadError) return <FiAlertCircle className="w-6 h-6" />;
+    if (uploadSuccess) return <FiCheck className="w-6 h-6" />;
+    if (isParsing) return <FiZap className="w-6 h-6 animate-pulse" />;
+    return <FiUpload className="w-6 h-6" />;
   };
 
   return (
@@ -148,288 +227,345 @@ const ResumeUploader = () => {
           className="mb-12"
         >
           <h1 className="text-4xl sm:text-5xl font-bold mb-4 gradient-text">
-            Resume Upload
+            AI-Powered Resume Upload
           </h1>
-          <p className="text-gray-600 dark:text-gray-300 text-lg">
-            Upload your resume (PDF or DOCX) to automatically update your portfolio
+          <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl">
+            Upload your resume and watch as our AI instantly transforms it into a stunning portfolio.
+            Real-time progress updates keep you informed every step of the way.
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Upload Section */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="lg:col-span-1"
-          >
-            {/* Drag & Drop Area */}
-            <motion.div
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              whileHover={{ scale: 1.02 }}
-              className={`p-8 rounded-xl border-2 border-dashed transition-all cursor-pointer ${
-                isDragging
-                  ? 'border-cyan-500 bg-cyan-50 dark:bg-cyan-900/20'
-                  : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-dark-800/50'
-              }`}
-            >
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".pdf,.docx"
-                onChange={handleFileSelect}
-                className="hidden"
-              />
-
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isUploading}
-                className="w-full flex flex-col items-center justify-center gap-4 py-12"
-              >
-                <motion.div
-                  animate={{ y: isDragging ? -10 : 0 }}
-                  transition={{ type: 'spring', stiffness: 300 }}
-                >
-                  <FiUpload className="w-12 h-12 text-cyan-500" />
-                </motion.div>
-                <div className="text-center">
-                  <p className="font-semibold text-gray-900 dark:text-white mb-1">
-                    {isUploading ? 'Uploading...' : 'Drag and drop your resume'}
-                  </p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    or click to browse (PDF or DOCX, max 10MB)
-                  </p>
-                </div>
-              </button>
-
-              {/* Progress Bar */}
-              <AnimatePresence>
-                {isUploading && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="mt-4 space-y-2"
-                  >
-                    <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${uploadProgress}%` }}
-                        className="h-full bg-gradient-to-r from-cyan-500 to-blue-600"
-                      />
-                    </div>
-                    <p className="text-xs text-gray-600 dark:text-gray-400 text-center">
-                      {uploadProgress}% uploaded
-                    </p>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
-
-            {/* Status Messages */}
-            <AnimatePresence>
-              {uploadError && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="mt-4 p-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800"
-                >
-                  <div className="flex gap-3 items-start">
-                    <FiAlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-sm font-semibold text-red-900 dark:text-red-200">
-                        Upload Error
-                      </p>
-                      <p className="text-sm text-red-800 dark:text-red-300 mt-1">
-                        {uploadError}
-                      </p>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-
-              {uploadSuccess && !parsedData && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="mt-4 p-4 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800"
-                >
-                  <div className="flex gap-3 items-start">
-                    <FiCheck className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-sm font-semibold text-green-900 dark:text-green-200">
-                        Upload Successful
-                      </p>
-                      <p className="text-sm text-green-800 dark:text-green-300 mt-1">
-                        Parsing resume data...
-                      </p>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.div>
-
-          {/* Preview Section */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="lg:col-span-2"
-          >
-            <AnimatePresence>
-              {parsedData ? (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  className="space-y-6 p-6 rounded-xl bg-white dark:bg-dark-800/50 border border-gray-200 dark:border-gray-700"
-                >
-                  {/* Header */}
-                  <div className="border-b border-gray-200 dark:border-gray-700 pb-4">
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                      {parsedData.name}
-                    </h2>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-gray-600 dark:text-gray-400">
-                      {parsedData.email && <p>📧 {parsedData.email}</p>}
-                      {parsedData.phone && <p>📱 {parsedData.phone}</p>}
-                      {parsedData.location && <p>📍 {parsedData.location}</p>}
-                    </div>
-                  </div>
-
-                  {/* Summary */}
-                  {parsedData.summary && (
-                    <div>
-                      <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
-                        Professional Summary
-                      </h3>
-                      <p className="text-sm text-gray-700 dark:text-gray-300 line-clamp-3">
-                        {parsedData.summary}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Skills Preview */}
-                  {parsedData.skills && (
-                    <div>
-                      <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
-                        Skills
-                      </h3>
-                      <div className="flex flex-wrap gap-2">
-                        {Object.entries(parsedData.skills).map(([category, skills]) => (
-                          <div key={category} className="px-3 py-1 rounded-full bg-cyan-100 dark:bg-cyan-900/30 text-xs font-medium text-cyan-900 dark:text-cyan-300">
-                            {category}: {skills.substring(0, 30)}...
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Experience Preview */}
-                  {parsedData.experience && parsedData.experience.length > 0 && (
-                    <div>
-                      <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
-                        Experience ({parsedData.experience.length})
-                      </h3>
-                      <div className="space-y-2">
-                        {parsedData.experience.slice(0, 2).map((exp, idx) => (
-                          <div key={idx} className="p-2 rounded bg-gray-50 dark:bg-gray-800/50">
-                            <p className="font-medium text-sm text-gray-900 dark:text-white">
-                              {exp.title}
-                            </p>
-                            <p className="text-xs text-gray-600 dark:text-gray-400">
-                              {exp.company} • {exp.duration}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Education Preview */}
-                  {parsedData.education && parsedData.education.length > 0 && (
-                    <div>
-                      <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
-                        Education ({parsedData.education.length})
-                      </h3>
-                      <div className="space-y-2">
-                        {parsedData.education.slice(0, 2).map((edu, idx) => (
-                          <div key={idx} className="p-2 rounded bg-gray-50 dark:bg-gray-800/50">
-                            <p className="font-medium text-sm text-gray-900 dark:text-white">
-                              {edu.degree}
-                            </p>
-                            <p className="text-xs text-gray-600 dark:text-gray-400">
-                              {edu.institution}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Action Buttons */}
-                  <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={handleApplyChanges}
-                      className="flex-1 px-4 py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-semibold hover:shadow-lg transition-shadow"
-                    >
-                      <FiDownload className="inline mr-2 w-4 h-4" />
-                      Apply Changes to Portfolio
-                    </motion.button>
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={handleReset}
-                      className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-semibold hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
-                    >
-                      <FiX className="inline mr-2 w-4 h-4" />
-                      Cancel
-                    </motion.button>
-                  </div>
-                </motion.div>
-              ) : (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="p-8 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 bg-gray-50/50 dark:bg-dark-800/20"
-                >
-                  <div className="text-center">
-                    <p className="text-gray-600 dark:text-gray-400 mb-2">
-                      Upload a resume to see a preview of extracted data
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-500">
-                      The preview will appear here once parsing is complete
-                    </p>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.div>
-        </div>
-
-        {/* Info Box */}
+        {/* Upload Area */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-          className="mt-12 p-6 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800"
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="mb-8"
         >
-          <h3 className="font-semibold text-blue-900 dark:text-blue-200 mb-2">
-            💡 How It Works
-          </h3>
-          <ul className="text-sm text-blue-800 dark:text-blue-300 space-y-1">
-            <li>• Upload your resume in PDF or DOCX format</li>
-            <li>• Our AI-powered parser extracts your information automatically</li>
-            <li>• Review the parsed data in the preview section</li>
-            <li>• Click "Apply Changes" to update your portfolio instantly</li>
-            <li>• Your data is saved locally and synced to your portfolio</li>
-          </ul>
+          <div
+            className={`relative border-2 border-dashed rounded-2xl p-12 text-center transition-all duration-300 cursor-pointer
+              ${isDragging
+                ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 scale-105'
+                : 'border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500'
+              }
+              ${uploadError ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : ''}
+              ${uploadSuccess ? 'border-green-400 bg-green-50 dark:bg-green-900/20' : ''}
+            `}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,.docx"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
+
+            <AnimatePresence mode="wait">
+              {(isUploading || isParsing) ? (
+                <motion.div
+                  key="uploading"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  className="flex flex-col items-center space-y-6"
+                >
+                  {/* Progress Icon */}
+                  <div className={`p-4 rounded-full bg-gradient-to-r ${getProgressColor()} text-white shadow-lg`}>
+                    {getProgressIcon()}
+                  </div>
+
+                  {/* Progress Bars */}
+                  <div className="w-full max-w-md space-y-4">
+                    {/* Upload Progress */}
+                    {isUploading && (
+                      <div>
+                        <div className="flex justify-between text-sm mb-2">
+                          <span className="text-gray-600 dark:text-gray-400">Uploading...</span>
+                          <span className="font-medium">{uploadProgress}%</span>
+                        </div>
+                        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
+                          <motion.div
+                            className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full"
+                            initial={{ width: 0 }}
+                            animate={{ width: `${uploadProgress}%` }}
+                            transition={{ duration: 0.3 }}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Parsing Progress */}
+                    {isParsing && (
+                      <div>
+                        <div className="flex justify-between text-sm mb-2">
+                          <span className="text-gray-600 dark:text-gray-400">
+                            {progressMessage || 'Processing...'}
+                          </span>
+                          <span className="font-medium">{parsingProgress}%</span>
+                        </div>
+                        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
+                          <motion.div
+                            className="h-full bg-gradient-to-r from-purple-500 to-purple-600 rounded-full"
+                            initial={{ width: 0 }}
+                            animate={{ width: `${parsingProgress}%` }}
+                            transition={{ duration: 0.5 }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Status Message */}
+                  {(isUploading || isParsing) && progressMessage && (
+                    <motion.p
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="text-sm text-gray-600 dark:text-gray-400 max-w-md"
+                    >
+                      {progressMessage}
+                    </motion.p>
+                  )}
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="upload-prompt"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  className="flex flex-col items-center space-y-6"
+                >
+                  <div className="p-6 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg">
+                    <FiUpload className="w-12 h-12" />
+                  </div>
+
+                  <div>
+                    <h3 className="text-2xl font-semibold mb-2 text-gray-900 dark:text-white">
+                      {uploadError ? 'Upload Failed' : uploadSuccess ? 'Upload Successful!' : 'Drop your resume here'}
+                    </h3>
+                    <p className="text-gray-600 dark:text-gray-400 mb-4">
+                      {uploadError
+                        ? uploadError
+                        : uploadSuccess
+                        ? 'Your resume has been parsed successfully!'
+                        : 'Supports PDF and DOCX files up to 5MB'
+                      }
+                    </p>
+
+                    {!uploadError && !uploadSuccess && (
+                      <button className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
+                        Choose File
+                      </button>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </motion.div>
+
+        {/* Parsed Data Preview */}
+        <AnimatePresence>
+          {parsedData && uploadSuccess && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="bg-white dark:bg-dark-800 rounded-2xl shadow-xl p-8 mb-8"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  📄 Parsed Resume Data
+                </h2>
+                <button
+                  onClick={handleReset}
+                  className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                >
+                  <FiX className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-6">
+                {/* Personal Info */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white border-b pb-2">
+                    👤 Personal Information
+                  </h3>
+                  {parsedData.name && (
+                    <div>
+                      <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Name:</span>
+                      <p className="text-gray-900 dark:text-white">{parsedData.name}</p>
+                    </div>
+                  )}
+                  {parsedData.email && (
+                    <div>
+                      <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Email:</span>
+                      <p className="text-gray-900 dark:text-white">{parsedData.email}</p>
+                    </div>
+                  )}
+                  {parsedData.phone && (
+                    <div>
+                      <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Phone:</span>
+                      <p className="text-gray-900 dark:text-white">{parsedData.phone}</p>
+                    </div>
+                  )}
+                  {parsedData.location && (
+                    <div>
+                      <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Location:</span>
+                      <p className="text-gray-900 dark:text-white">{parsedData.location}</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Skills */}
+                {parsedData.skills && parsedData.skills.length > 0 && (
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white border-b pb-2">
+                      🛠️ Skills ({parsedData.skills.length})
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {parsedData.skills.slice(0, 10).map((skill, index) => (
+                        <span
+                          key={index}
+                          className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-sm"
+                        >
+                          {skill}
+                        </span>
+                      ))}
+                      {parsedData.skills.length > 10 && (
+                        <span className="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-full text-sm">
+                          +{parsedData.skills.length - 10} more
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Summary */}
+              {parsedData.summary && (
+                <div className="mt-6">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white border-b pb-2 mb-3">
+                    📝 Professional Summary
+                  </h3>
+                  <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+                    {parsedData.summary}
+                  </p>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-4 mt-8 pt-6 border-t">
+                <button
+                  onClick={handleApplyChanges}
+                  className="flex-1 px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-medium"
+                >
+                  ✨ Apply to Portfolio
+                </button>
+                <button
+                  onClick={handleReset}
+                  className="px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300"
+                >
+                  Start Over
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Error Message */}
+        <AnimatePresence>
+          {uploadError && !parsedData && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl p-6 mb-8"
+            >
+              <div className="flex items-center space-x-3">
+                <FiAlertCircle className="w-6 h-6 text-red-500 flex-shrink-0" />
+                <div>
+                  <h3 className="text-lg font-medium text-red-800 dark:text-red-200">
+                    Upload Failed
+                  </h3>
+                  <p className="text-red-700 dark:text-red-300 mt-1">
+                    {uploadError}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setUploadError(null)}
+                  className="ml-auto p-1 text-red-400 hover:text-red-600 dark:hover:text-red-300"
+                >
+                  <FiX className="w-5 h-5" />
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Features List */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+          className="bg-white dark:bg-dark-800 rounded-2xl shadow-xl p-8"
+        >
+          <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white">
+            🚀 Powered by Advanced AI
+          </h2>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[
+              {
+                icon: '⚡',
+                title: 'Real-Time Processing',
+                description: 'Watch your resume transform with live progress updates'
+              },
+              {
+                icon: '🔒',
+                title: 'Enterprise Security',
+                description: 'Bank-level encryption and automatic file cleanup'
+              },
+              {
+                icon: '🎯',
+                title: 'Smart Parsing',
+                description: 'AI extracts skills, experience, and projects automatically'
+              },
+              {
+                icon: '📱',
+                title: 'Mobile Optimized',
+                description: 'Upload from any device with drag-and-drop support'
+              },
+              {
+                icon: '🔄',
+                title: 'Instant Updates',
+                description: 'Portfolio updates immediately without page refresh'
+              },
+              {
+                icon: '🎨',
+                title: 'Premium UX',
+                description: 'Beautiful animations and professional design'
+              }
+            ].map((feature, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.1 * index }}
+                className="text-center p-4 rounded-lg hover:bg-gray-50 dark:hover:bg-dark-700 transition-colors"
+              >
+                <div className="text-3xl mb-3">{feature.icon}</div>
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
+                  {feature.title}
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {feature.description}
+                </p>
+              </motion.div>
+            ))}
+          </div>
         </motion.div>
       </div>
     </section>
@@ -437,3 +573,4 @@ const ResumeUploader = () => {
 };
 
 export default ResumeUploader;
+

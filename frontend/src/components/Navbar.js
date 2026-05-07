@@ -12,7 +12,6 @@ const Navbar = () => {
     { label: 'Skills', href: '#skills' },
     { label: 'Projects', href: '#projects' },
     { label: 'Experience', href: '#experience' },
-    { label: 'Resume', href: '#resume' },
     { label: 'Upload Resume', href: '#resume-uploader' },
     { label: 'Contact', href: '#contact' },
   ];
