@@ -1,4 +1,4 @@
-# 🚀 Production-Grade AI Portfolio with Resume Upload
+# 🚀  AI Portfolio with Resume Upload
 
 A modern, secure, and scalable portfolio website featuring AI-powered resume parsing with real-time progress updates. Built with enterprise-grade security and premium user experience.
 
